@@ -1,0 +1,13 @@
+<el-table-column prop="roomStatus" label="状态" width="100">
+          <template #default="scope">
+            <el-tag v-show=false :type="scope.row.roomStatus === 1 ? 'success' : 'danger'">
+              {{ scope.row.roomStatus === 1 ? '可用' : '不可用' }}
+            </el-tag>
+            <!-- 管理员可以看到开关 -->
+            <el-switch
+              v-show=false
+              v-model-value="scope.row.roomStatus"
+              :active-value="1"
+              :inactive-value="0"
+              @update ="(newVal) => handleStatusChange(scope.row, newVal)"
+            />
