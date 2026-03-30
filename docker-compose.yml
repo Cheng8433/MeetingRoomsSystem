@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Redis 服务
+  redis:
+    image: redis:7.2.6-alpine
+    container_name: springboot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes  # 开启数据持久化
+    restart: unless-stopped
+    networks:
+      - spring-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Spring Boot 应用
+  springboot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: springboot-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      # Redis 配置（从环境变量读取）
+      - REDIS_HOST=redis  # 注意：这里使用服务名 redis，不是 localhost
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}  # 可选密码
+
+      # 应用配置
+      - SERVER_PORT=8080
+
+      # 数据库配置（如果需要）
+      - DB_URL=jdbc:mysql://mysql:3306/meetingroom  # 如果用了mysql服务
+      - DB_USERNAME=${DB_USERNAME:root}
+      - DB_PASSWORD=${DB_PASSWORD:Cheng123456}
+
+      # Java 内存配置（可选）
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    volumes:
+      # 挂载日志目录
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - spring-network
+
+  # 可选：MySQL 数据库服务（如果需要）
+  # mysql:
+  #   image: mysql:8
+  #   container_name: springboot-mysql
+  #   ports:
+  #     - "3306:3306"
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+  #     - MYSQL_DATABASE=yourdb
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   networks:
+  #     - spring-network
+
+volumes:
+  redis_data:
+  # mysql_data:
+
+networks:
+  spring-network:
+    driver: bridge

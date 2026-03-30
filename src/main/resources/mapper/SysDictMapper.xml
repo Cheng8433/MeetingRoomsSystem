@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.myGroup.mapper.SysDictMapper">
+
+    <resultMap id="BaseResultMap" type="com.myGroup.entity.SysDict">
+        <id column="dict_id" property="dictId" />
+        <result column="dict_type" property="dictType" />
+        <result column="dict_code" property="dictCode" />
+        <result column="dict_name" property="dictName" />
+        <result column="sort" property="sort" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 插入数据字典 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="dictId">
+        INSERT INTO sys_dict (
+            dict_type, dict_code, dict_name, sort, status
+        ) VALUES (
+                     #{dictType}, #{dictCode}, #{dictName}, #{sort}, #{status}
+                 )
+    </insert>
+
+    <!-- 批量插入数据字典 -->
+    <insert id="insertBatch" useGeneratedKeys="true" keyProperty="dictId">
+        INSERT INTO sys_dict (
+        dict_type, dict_code, dict_name, sort, status
+        ) VALUES
+        <foreach collection="list" item="dict" separator=",">
+            (#{dict.dictType}, #{dict.dictCode}, #{dict.dictName}, #{dict.sort}, #{dict.status})
+        </foreach>
+    </insert>
+
+    <!-- 根据ID删除数据字典 -->
+    <delete id="deleteById">
+        DELETE FROM sys_dict WHERE dict_id = #{dictId}
+    </delete>
+
+    <!-- 根据字典类型和字典码删除 -->
+    <delete id="deleteByTypeAndCode">
+        DELETE FROM sys_dict
+        WHERE dict_type = #{dictType} AND dict_code = #{dictCode}
+    </delete>
+
+    <!-- 更新数据字典 -->
+    <update id="update">
+        UPDATE sys_dict
+        <set>
+            <if test="dictType != null and dictType != ''">dict_type = #{dictType},</if>
+            <if test="dictCode != null and dictCode != ''">dict_code = #{dictCode},</if>
+            <if test="dictName != null and dictName != ''">dict_name = #{dictName},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE dict_id = #{dictId}
+    </update>
+
+    <!-- 根据ID查询数据字典 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict WHERE dict_id = #{dictId}
+    </select>
+
+    <!-- 根据字典类型和字典码查询 -->
+    <select id="selectByTypeAndCode" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE dict_type = #{dictType} AND dict_code = #{dictCode}
+    </select>
+
+    <!-- 查询所有数据字典 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict ORDER BY dict_type, sort, dict_code
+    </select>
+
+    <!-- 根据字典类型查询数据字典 -->
+    <select id="selectByType" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE dict_type = #{dictType}
+        ORDER BY sort, dict_code
+    </select>
+
+    <!-- 根据字典类型查询有效的数据字典（状态为1） -->
+    <select id="selectValidByType" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE dict_type = #{dictType} AND status = 1
+        ORDER BY sort, dict_code
+    </select>
+
+    <!-- 根据字典码模糊查询 -->
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE dict_code LIKE CONCAT('%', #{dictCode}, '%')
+        ORDER BY dict_type, sort
+    </select>
+
+    <!-- 根据字典名称模糊查询 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE dict_name LIKE CONCAT('%', #{dictName}, '%')
+        ORDER BY dict_type, sort
+    </select>
+
+    <!-- 根据状态查询数据字典 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE status = #{status}
+        ORDER BY dict_type, sort
+    </select>
+
+    <!-- 检查字典类型和字典码是否存在 -->
+    <select id="existsByTypeAndCode" resultType="boolean">
+        SELECT COUNT(1) FROM sys_dict
+        WHERE dict_type = #{dictType} AND dict_code = #{dictCode}
+    </select>
+
+    <!-- 检查字典类型和字典码是否存在（排除指定ID） -->
+    <select id="existsByTypeAndCodeExcludeId" resultType="boolean">
+        SELECT COUNT(1) FROM sys_dict
+        WHERE dict_type = #{dictType} AND dict_code = #{dictCode} AND dict_id != #{dictId}
+    </select>
+
+    <!-- 更新数据字典状态 -->
+    <update id="updateStatus">
+        UPDATE sys_dict
+        SET status = #{status}
+        WHERE dict_id = #{dictId}
+    </update>
+
+    <!-- 更新排序 -->
+    <update id="updateSort">
+        UPDATE sys_dict
+        SET sort = #{sort}
+        WHERE dict_id = #{dictId}
+    </update>
+
+    <!-- 分页查询数据字典 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        ORDER BY dict_type, sort, dict_code
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 根据条件查询数据字典 -->
+    <select id="selectByConditions" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE 1=1
+        <if test="dictType != null and dictType != ''">
+            AND dict_type = #{dictType}
+        </if>
+        <if test="dictCode != null and dictCode != ''">
+            AND dict_code LIKE CONCAT('%', #{dictCode}, '%')
+        </if>
+        <if test="dictName != null and dictName != ''">
+            AND dict_name LIKE CONCAT('%', #{dictName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY dict_type, sort, dict_code
+    </select>
+
+    <!-- 统计数据字典数量 -->
+    <select id="count" resultType="int">
+        SELECT COUNT(1) FROM sys_dict
+    </select>
+
+    <!-- 统计条件查询的数据字典数量 -->
+    <select id="countByConditions" resultType="int">
+        SELECT COUNT(1) FROM sys_dict
+        WHERE 1=1
+        <if test="dictType != null and dictType != ''">
+            AND dict_type = #{dictType}
+        </if>
+        <if test="dictCode != null and dictCode != ''">
+            AND dict_code LIKE CONCAT('%', #{dictCode}, '%')
+        </if>
+        <if test="dictName != null and dictName != ''">
+            AND dict_name LIKE CONCAT('%', #{dictName}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 获取所有字典类型（去重） -->
+    <select id="selectDistinctTypes" resultType="string">
+        SELECT DISTINCT dict_type FROM sys_dict ORDER BY dict_type
+    </select>
+
+    <!-- 根据多个字典类型查询 -->
+    <select id="selectByTypes" resultMap="BaseResultMap">
+        SELECT * FROM sys_dict
+        WHERE dict_type IN
+        <foreach collection="types" item="type" open="(" separator="," close=")">
+            #{type}
+        </foreach>
+        AND status = 1
+        ORDER BY dict_type, sort, dict_code
+    </select>
+
+</mapper>

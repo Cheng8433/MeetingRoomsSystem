@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.myGroup.mapper.MeetingRoomMapper">
+
+    <resultMap id="BaseResultMap" type="com.myGroup.entity.MeetingRoom">
+        <id column="room_id" property="roomId" />
+        <result column="room_name" property="roomName" />
+        <result column="room_no" property="roomNo" />
+        <result column="capacity" property="capacity" />
+        <result column="area" property="area" />
+        <result column="description" property="description" />
+        <result column="room_status" property="roomStatus" />
+        <result column="photo_url" property="photoUrl" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="create_user_id" property="createUserId" />
+    </resultMap>
+
+    <!-- 包含创建人信息的ResultMap -->
+    <resultMap id="WithUserResultMap" type="com.myGroup.entity.MeetingRoom" extends="BaseResultMap">
+        <association property="createUser" javaType="com.myGroup.entity.SysUser">
+            <id column="user_id" property="userId"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+        </association>
+    </resultMap>
+
+    <!-- 插入会议室 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="roomId">
+        INSERT INTO meeting_room (
+            room_name, room_no, capacity, area, description, room_status,
+            photo_url, create_user_id
+        ) VALUES (
+                     #{roomName}, #{roomNo}, #{capacity}, #{area}, #{description},
+                     #{roomStatus}, #{photoUrl}, #{createUserId}
+                 )
+    </insert>
+
+    <!-- 根据ID删除会议室 -->
+    <delete id="deleteById">
+        DELETE FROM meeting_room WHERE room_id = #{roomId}
+    </delete>
+
+    <!-- 更新会议室信息 -->
+    <update id="update">
+        UPDATE meeting_room
+        <set>
+            <if test="roomName != null and roomName != ''">room_name = #{roomName},</if>
+            <if test="roomNo != null and roomNo != ''">room_no = #{roomNo},</if>
+            <if test="capacity != null">capacity = #{capacity},</if>
+            <if test="area != null">area = #{area},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="roomStatus != null">room_status = #{roomStatus},</if>
+            <if test="photoUrl != null">photo_url = #{photoUrl},</if>
+            <if test="createUserId != null">create_user_id = #{createUserId},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE room_id = #{roomId}
+    </update>
+
+    <!-- 根据ID查询会议室 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room WHERE room_id = #{roomId}
+    </select>
+
+    <!-- 根据ID查询会议室（包含创建人信息） -->
+    <select id="selectByIdWithUser" resultMap="WithUserResultMap">
+        SELECT mr.*, u.username, u.real_name
+        FROM meeting_room mr
+                 LEFT JOIN sys_user u ON mr.create_user_id = u.user_id
+        WHERE mr.room_id = #{roomId}
+    </select>
+
+    <!-- 根据会议室编号查询 -->
+    <select id="selectByRoomNo" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room WHERE room_no = #{roomNo}
+    </select>
+
+    <!-- 查询所有会议室 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询所有会议室（包含创建人信息） -->
+    <select id="selectAllWithUser" resultMap="WithUserResultMap">
+        SELECT mr.*, u.username, u.real_name
+        FROM meeting_room mr
+                 LEFT JOIN sys_user u ON mr.create_user_id = u.user_id
+        ORDER BY mr.create_time DESC
+    </select>
+
+    <!-- 根据状态查询会议室 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room
+        WHERE room_status = #{roomStatus}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据容量查询会议室 -->
+    <select id="selectByCapacity" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room
+        WHERE capacity >= #{minCapacity}
+        ORDER BY capacity ASC
+    </select>
+
+    <!-- 根据会议室名称模糊查询 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room
+        WHERE room_name LIKE CONCAT('%', #{roomName}, '%')
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 检查会议室编号是否存在 -->
+    <select id="existsByRoomNo" resultType="boolean">
+        SELECT COUNT(1) FROM meeting_room WHERE room_no = #{roomNo}
+    </select>
+
+    <!-- 检查会议室编号是否存在（排除指定ID） -->
+    <select id="existsByRoomNoExcludeId" resultType="boolean">
+        SELECT COUNT(1) FROM meeting_room
+        WHERE room_no = #{roomNo} AND room_id != #{roomId}
+    </select>
+
+    <!-- 更新会议室状态 -->
+    <update id="updateStatus">
+        UPDATE meeting_room
+        SET room_status = #{roomStatus}, update_time = CURRENT_TIMESTAMP
+        WHERE room_id = #{roomId}
+    </update>
+
+    <!-- 分页查询会议室 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room
+        ORDER BY create_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 分页查询会议室（包含创建人信息） -->
+    <select id="selectByPageWithUser" resultMap="WithUserResultMap">
+        SELECT mr.*, u.username, u.real_name
+        FROM meeting_room mr
+                 LEFT JOIN sys_user u ON mr.create_user_id = u.user_id
+        ORDER BY mr.create_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 统计会议室数量 -->
+    <select id="count" resultType="int">
+        SELECT COUNT(1) FROM meeting_room
+    </select>
+
+    <!-- 根据创建人查询会议室 -->
+    <select id="selectByCreateUserId" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room
+        WHERE create_user_id = #{createUserId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询可用会议室 -->
+    <select id="selectAvailableRooms" resultMap="BaseResultMap">
+        SELECT * FROM meeting_room
+        WHERE room_status = 1
+        ORDER BY room_name ASC
+    </select>
+
+</mapper>

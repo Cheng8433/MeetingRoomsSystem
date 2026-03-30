@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.myGroup.mapper.SysUserMapper">
+
+    <resultMap id="BaseResultMap" type="com.myGroup.entity.SysUser">
+        <id column="user_id" property="id" />
+        <result column="username" property="username" />
+        <result column="password" property="password" />
+        <result column="real_name" property="realName" />
+        <result column="role_type" property="role" />
+        <result column="phone" property="phone" />
+        <result column="email" property="email" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 插入用户 -->
+    <insert id="insertSysUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (
+            username, password, real_name, role_type, phone, email, status
+        ) VALUES (
+                     #{username}, #{password}, #{realName}, #{role}, #{phone}, #{email}, #{status}
+                 )
+    </insert>
+
+    <!-- 根据ID删除用户 -->
+    <delete id="deleteSysUserById">
+        DELETE FROM sys_user WHERE user_id = #{id}
+    </delete>
+
+    <!-- 更新用户信息 -->
+    <update id="updateSysUser">
+        UPDATE sys_user
+        <set>
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="realName != null and realName != ''">real_name = #{realName},</if>
+            <if test="role != null">role_type = #{role},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE user_id = #{id}
+    </update>
+
+    <!-- 根据ID查询用户 -->
+    <select id="selectSysUserById" resultMap="BaseResultMap">
+        SELECT * FROM sys_user WHERE user_id = #{id}
+    </select>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectSysUserByName" resultMap="BaseResultMap">
+        SELECT * FROM sys_user WHERE username = #{username}
+    </select>
+
+    <!-- 查询所有用户 -->
+    <select id="selectAllSysUsers" resultMap="BaseResultMap">
+        SELECT * FROM sys_user ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计用户数量 -->
+    <select id="count" resultType="int">
+        SELECT COUNT(1) FROM sys_user
+    </select>
+
+</mapper>

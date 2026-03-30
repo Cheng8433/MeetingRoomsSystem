@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.myGroup.mapper.SysOperLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.myGroup.entity.SysOperLog">
+        <id column="log_id" property="logId" />
+        <result column="oper_user_id" property="operUserId" />
+        <result column="oper_user_name" property="operUserName" />
+        <result column="oper_module" property="operModule" />
+        <result column="oper_type" property="operType" />
+        <result column="oper_content" property="operContent" />
+        <result column="oper_ip" property="operIp" />
+        <result column="oper_time" property="operTime" />
+    </resultMap>
+
+    <!-- 插入操作日志 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="logId">
+        INSERT INTO sys_oper_log (
+            oper_user_id, oper_user_name, oper_module, oper_type,
+            oper_content, oper_ip, oper_time
+        ) VALUES (
+                     #{operUserId}, #{operUserName}, #{operModule}, #{operType},
+                     #{operContent}, #{operIp}, #{operTime}
+                 )
+    </insert>
+
+    <!-- 根据ID删除操作日志 -->
+    <delete id="deleteById">
+        DELETE FROM sys_oper_log WHERE log_id = #{logId}
+    </delete>
+
+    <!-- 批量删除操作日志 -->
+    <delete id="deleteByIds">
+        DELETE FROM sys_oper_log WHERE log_id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 清空操作日志 -->
+    <delete id="deleteAll">
+        DELETE FROM sys_oper_log
+    </delete>
+
+    <!-- 根据ID查询操作日志 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log WHERE log_id = #{logId}
+    </select>
+
+    <!-- 查询所有操作日志 -->
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log ORDER BY oper_time DESC
+    </select>
+
+    <!-- 根据用户ID查询操作日志 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE oper_user_id = #{operUserId}
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 根据用户名查询操作日志 -->
+    <select id="selectByUserName" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE oper_user_name LIKE CONCAT('%', #{operUserName}, '%')
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 根据操作模块查询操作日志 -->
+    <select id="selectByModule" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE oper_module = #{operModule}
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 根据操作类型查询操作日志 -->
+    <select id="selectByType" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE oper_type = #{operType}
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 根据IP地址查询操作日志 -->
+    <select id="selectByIp" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE oper_ip = #{operIp}
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 根据时间范围查询操作日志 -->
+    <select id="selectByTimeRange" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE oper_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 分页查询操作日志 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        ORDER BY oper_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 根据条件查询操作日志 -->
+    <select id="selectByConditions" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        WHERE 1=1
+        <if test="operUserName != null and operUserName != ''">
+            AND oper_user_name LIKE CONCAT('%', #{operUserName}, '%')
+        </if>
+        <if test="operModule != null and operModule != ''">
+            AND oper_module = #{operModule}
+        </if>
+        <if test="operType != null and operType != ''">
+            AND oper_type = #{operType}
+        </if>
+        <if test="startTime != null">
+            AND oper_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND oper_time &lt;= #{endTime}
+        </if>
+        ORDER BY oper_time DESC
+    </select>
+
+    <!-- 统计操作日志数量 -->
+    <select id="count" resultType="int">
+        SELECT COUNT(1) FROM sys_oper_log
+    </select>
+
+    <!-- 统计条件查询的操作日志数量 -->
+    <select id="countByConditions" resultType="int">
+        SELECT COUNT(1) FROM sys_oper_log
+        WHERE 1=1
+        <if test="operUserName != null and operUserName != ''">
+            AND oper_user_name LIKE CONCAT('%', #{operUserName}, '%')
+        </if>
+        <if test="operModule != null and operModule != ''">
+            AND oper_module = #{operModule}
+        </if>
+        <if test="operType != null and operType != ''">
+            AND oper_type = #{operType}
+        </if>
+        <if test="startTime != null">
+            AND oper_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND oper_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 删除过期操作日志 -->
+    <delete id="deleteExpiredLogs">
+        DELETE FROM sys_oper_log
+        WHERE oper_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </delete>
+
+    <!-- 获取操作模块列表（去重） -->
+    <select id="selectDistinctModules" resultType="string">
+        SELECT DISTINCT oper_module FROM sys_oper_log ORDER BY oper_module
+    </select>
+
+    <!-- 获取操作类型列表（去重） -->
+    <select id="selectDistinctTypes" resultType="string">
+        SELECT DISTINCT oper_type FROM sys_oper_log ORDER BY oper_type
+    </select>
+    <!-- 获取最近操作日志 -->
+    <select id="selectLatestLogs" resultMap="BaseResultMap">
+        SELECT * FROM sys_oper_log
+        ORDER BY oper_time DESC
+            LIMIT #{limit}
+    </select>
+
+</mapper>

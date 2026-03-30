@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.myGroup.mapper.SysNoticeMapper">
+
+    <resultMap id="BaseResultMap" type="com.myGroup.entity.SysNotice">
+        <id column="notice_id" property="noticeId" />
+        <result column="receive_user_id" property="receiveUserId" />
+        <result column="notice_type" property="noticeType" />
+        <result column="related_id" property="relatedId" />
+        <result column="notice_content" property="noticeContent" />
+        <result column="read_status" property="readStatus" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 包含用户信息的ResultMap -->
+    <resultMap id="WithUserResultMap" type="com.myGroup.entity.SysNotice" extends="BaseResultMap">
+        <association property="receiveUser" javaType="com.myGroup.entity.SysUser">
+            <id column="user_id" property="userId"/>
+            <result column="username" property="username"/>
+            <result column="real_name" property="realName"/>
+        </association>
+    </resultMap>
+
+    <!-- 插入系统通知 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="noticeId">
+        INSERT INTO sys_notice (
+            receive_user_id, notice_type, related_id, notice_content, read_status
+        ) VALUES (
+                     #{receiveUserId}, #{noticeType}, #{relatedId}, #{noticeContent}, #{readStatus}
+                 )
+    </insert>
+
+    <!-- 批量插入系统通知 -->
+    <insert id="insertBatch" useGeneratedKeys="true" keyProperty="noticeId">
+        INSERT INTO sys_notice (
+        receive_user_id, notice_type, related_id, notice_content, read_status
+        ) VALUES
+        <foreach collection="list" item="notice" separator=",">
+            (#{notice.receiveUserId}, #{notice.noticeType}, #{notice.relatedId},
+            #{notice.noticeContent}, #{notice.readStatus})
+        </foreach>
+    </insert>
+
+    <!-- 根据ID删除通知 -->
+    <delete id="deleteById">
+        DELETE FROM sys_notice WHERE notice_id = #{noticeId}
+    </delete>
+
+    <!-- 根据用户ID删除通知 -->
+    <delete id="deleteByUserId">
+        DELETE FROM sys_notice WHERE receive_user_id = #{receiveUserId}
+    </delete>
+
+    <!-- 更新通知信息 -->
+    <update id="update">
+        UPDATE sys_notice
+        <set>
+            <if test="receiveUserId != null">receive_user_id = #{receiveUserId},</if>
+            <if test="noticeType != null">notice_type = #{noticeType},</if>
+            <if test="relatedId != null">related_id = #{relatedId},</if>
+            <if test="noticeContent != null and noticeContent != ''">notice_content = #{noticeContent},</if>
+            <if test="readStatus != null">read_status = #{readStatus},</if>
+        </set>
+        WHERE notice_id = #{noticeId}
+    </update>
+
+    <!-- 根据ID查询通知 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice WHERE notice_id = #{noticeId}
+    </select>
+
+    <!-- 根据ID查询通知（包含用户信息） -->
+    <select id="selectByIdWithUser" resultMap="WithUserResultMap">
+        SELECT sn.*, u.username, u.real_name
+        FROM sys_notice sn
+                 LEFT JOIN sys_user u ON sn.receive_user_id = u.user_id
+        WHERE sn.notice_id = #{noticeId}
+    </select>
+
+    <!-- 根据用户ID查询通知 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据用户ID查询通知（包含用户信息） -->
+    <select id="selectByUserIdWithUser" resultMap="WithUserResultMap">
+        SELECT sn.*, u.username, u.real_name
+        FROM sys_notice sn
+                 LEFT JOIN sys_user u ON sn.receive_user_id = u.user_id
+        WHERE sn.receive_user_id = #{receiveUserId}
+        ORDER BY sn.create_time DESC
+    </select>
+
+    <!-- 查询用户未读通知 -->
+    <select id="selectUnreadByUserId" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId} AND read_status = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询用户已读通知 -->
+    <select id="selectReadByUserId" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId} AND read_status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据通知类型查询 -->
+    <select id="selectByType" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId} AND notice_type = #{noticeType}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据关联ID查询通知 -->
+    <select id="selectByRelatedId" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE related_id = #{relatedId}
+        <if test="noticeType != null">
+            AND notice_type = #{noticeType}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 标记通知为已读 -->
+    <update id="markAsRead">
+        UPDATE sys_notice
+        SET read_status = 1
+        WHERE notice_id = #{noticeId}
+    </update>
+
+    <!-- 批量标记通知为已读 -->
+    <update id="markMultipleAsRead">
+        UPDATE sys_notice
+        SET read_status = 1
+        WHERE notice_id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 标记用户所有通知为已读 -->
+    <update id="markAllAsRead">
+        UPDATE sys_notice
+        SET read_status = 1
+        WHERE receive_user_id = #{receiveUserId}
+    </update>
+
+    <!-- 分页查询用户通知 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId}
+        ORDER BY create_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 分页查询用户通知（包含用户信息） -->
+    <select id="selectByPageWithUser" resultMap="WithUserResultMap">
+        SELECT sn.*, u.username, u.real_name
+        FROM sys_notice sn
+                 LEFT JOIN sys_user u ON sn.receive_user_id = u.user_id
+        WHERE sn.receive_user_id = #{receiveUserId}
+        ORDER BY sn.create_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 统计用户通知数量 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(1) FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId}
+    </select>
+
+    <!-- 统计用户未读通知数量 -->
+    <select id="countUnreadByUserId" resultType="int">
+        SELECT COUNT(1) FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId} AND read_status = 0
+    </select>
+
+    <!-- 根据条件查询通知 -->
+    <select id="selectByConditions" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId}
+        <if test="noticeType != null">
+            AND notice_type = #{noticeType}
+        </if>
+        <if test="readStatus != null">
+            AND read_status = #{readStatus}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 删除过期通知 -->
+    <delete id="deleteExpiredNotices">
+        DELETE FROM sys_notice
+        WHERE create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </delete>
+
+    <!-- 获取最新通知 -->
+    <select id="selectLatestNotices" resultMap="BaseResultMap">
+        SELECT * FROM sys_notice
+        WHERE receive_user_id = #{receiveUserId}
+        ORDER BY create_time DESC
+            LIMIT #{limit}
+    </select>
+
+</mapper>
